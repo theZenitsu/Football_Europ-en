@@ -1,0 +1,8 @@
+#### `requirements.txt`
+```plaintext
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+sqlite3
