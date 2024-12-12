@@ -8,23 +8,10 @@ db_path = '/home/corolo/Desktop/europe_football/Football_Europ-en/data/raw/datab
 conn = sqlite3.connect(db_path)
 
 # Step 2: Test a simple query
-query = """
-SELECT 
-    p.player_name,
-    pa.overall_rating,
-    pa.potential,
-    m.season,
-    t.team_long_name
-FROM 
-    Player p
-JOIN 
-    Player_Attributes pa ON p.player_api_id = pa.player_api_id
-JOIN 
-    Match m ON m.home_team_api_id = pa.player_api_id OR m.away_team_api_id = pa.player_api_id
-JOIN 
-    Team t ON t.team_api_id = m.home_team_api_id
-LIMIT 5;
-"""
+query = "SELECT * FROM Player LIMIT 5;"
+result = pd.read_sql_query(query, conn)
+print(result)
+
 
 
 try:
