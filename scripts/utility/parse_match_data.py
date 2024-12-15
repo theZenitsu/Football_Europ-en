@@ -1,69 +1,31 @@
-import sqlite3
 import pandas as pd
-import logging
 import xml.etree.ElementTree as ET
 
-# Configure logging
-logging.basicConfig(
-    filename='/home/corolo/Desktop/europe_football/logs/parse_match_data.log',
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Path to your CSV file
+csv_file_path = '/home/corolo/Desktop/europe_football/Football_Europ-en/data/processed/parsed_match_data.csv'
 
-# Path to SQLite database
-db_path = '/home/corolo/Desktop/europe_football/Football_Europ-en/data/raw/database.sqlite'
+# Load the CSV file
+data = pd.read_csv(csv_file_path)
 
-def parse_xml_field(xml_data, tag):
-    """
-    Parse XML data and extract the text of a specific tag.
-    """
-    if not xml_data:
+# Function to parse XML and extract specific data
+def parse_xml_column(xml_content, tag):
+    if pd.isna(xml_content) or not isinstance(xml_content, str):
         return None
     try:
-        root = ET.fromstring(xml_data)
-        return root.find(tag).text if root.find(tag) is not None else None
+        root = ET.fromstring(xml_content)
+        return [elem.text for elem in root.findall(f".//{tag}")]
     except ET.ParseError:
-        logging.error("Failed to parse XML data: %s", xml_data)
         return None
 
-try:
-    # Connect to the database
-    logging.info("Connecting to SQLite database.")
-    conn = sqlite3.connect(db_path)
-    
-    # Query to fetch relevant columns
-    query = """
-    SELECT goal, shoton, shotoff, possession
-    FROM Match
-    WHERE goal IS NOT NULL OR shoton IS NOT NULL OR shotoff IS NOT NULL OR possession IS NOT NULL
-    LIMIT 10;
-    """
-    logging.info("Executing query: %s", query)
-    
-    # Fetch data into a DataFrame
-    match_data = pd.read_sql_query(query, conn)
-    logging.info("Data fetched successfully.")
-    
-    # Parse XML fields and extract relevant information
-    match_data['goal_value'] = match_data['goal'].apply(lambda x: parse_xml_field(x, 'value'))
-    match_data['possession_comment'] = match_data['possession'].apply(lambda x: parse_xml_field(x, 'comment'))
-    
-    # Save the parsed data to a CSV
-    output_path = '/home/corolo/Desktop/europe_football/Football_Europ-en/data/processed/parsed_match_data.csv'
-    match_data.to_csv(output_path, index=False)
-    logging.info("Parsed match data saved to: %s", output_path)
-    
-    # Print the parsed data
-    print("Parsed Data:")
-    print(match_data)
+# Extract relevant data
+data['goal_values'] = data['goal'].apply(lambda x: parse_xml_column(x, 'goals'))
+data['shoton_values'] = data['shoton'].apply(lambda x: parse_xml_column(x, 'shoton'))
+data['shotoff_values'] = data['shotoff'].apply(lambda x: parse_xml_column(x, 'shotoff'))
+data['possession_comments'] = data['possession'].apply(lambda x: parse_xml_column(x, 'comment'))
 
-except sqlite3.Error as e:
-    logging.error("SQLite error: %s", e)
+# Save the extracted data to a new CSV file
+output_file_path = '/path/to/your/extracted_data.csv'
+data.to_csv(output_file_path, index=False)
 
-except Exception as e:
-    logging.error("An error occurred: %s", e)
-
-finally:
-    if 'conn' in locals():
-        conn.close()
-        logging.info("Database connection closed.")
+# Print a preview of the extracted data
+print(data.head())
